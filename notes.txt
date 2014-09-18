@@ -1,0 +1,152 @@
+# Vagrantfile
+
+config.vm.network "forwarded_port", guest: 80, host: 8080
+
+config.vm.provider "virtualbox" do |vb|
+#   # Don't boot with headless mode
+vb.gui = true
+#
+#   # Use VBoxManage to customize the VM. For example to change memory:
+vb.customize ["modifyvm", :id, "--memory", "2048"]
+end
+#
+# View the documentation for the provider you're using for more
+# information on available options.
+config.vm.provision :shell, path: "bootstrap.sh"
+
+
+
+# notes for bootstrap.sh
+
+## Packer - notes
+- https://github.com/mitchellh/packer/issues/1147
+
+## Vagrant 
+- https://docs.vagrantup.com/v2/boxes.html
+- https://vagrantcloud.com/search?utf8=%E2%9C%93&sort=&provider=&q=centos
+- https://vagrantcloud.com/chef/boxes/centos-6.5
+- https://github.com/opscode/bento
+
+mkdir -p ~/Etatyo/CentOS/geocatvb01
+cd ~/Etatyo/CentOS/geocatvb01
+
+
+vagrant init chef/centos-6.5
+
+vagrant up 
+
+# SQL TGZ resources
+mkdir resources
+cp ~/Etatyo/resources/* resources/
+
+vagrant ssh
+
+## TOOLS
+sudo yum -y install unzip
+
+## CentOs - PostgreSQL 9.3 
+- https://wiki.postgresql.org/wiki/YUM_Installation
+- http://postgis.net/install/
+
+#sudo vi /etc/yum.repos.d/CentOS-Base.repo
+#   exclude=postgresql*
+   
+sudo sed '/\[.*\]/ a\
+exclude=postgresql*' /etc/yum.repos.d/CentOS-Base.repo > TEMP-CentOS-Base.repo
+sudo cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+sudo cp TEMP-CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
+
+
+sudo yum localinstall http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-centos93-9.3-1.noarch.rpm
+sudo yum list postgres*
+sudo yum install postgresql93-server
+
+sudo service postgresql-9.3 initdb
+sudo chkconfig postgresql-9.3 on
+#sudo service postgresql-9.3 start
+
+## CentOS - NGINX installation and configuration (hostname, proxy pass, document directory)
+- https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-centos-6-with-yum
+
+sudo su -c 'rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm'
+sudo yum install nginx
+
+## CentOS - JDK 1.7 installation
+sudo yum install java-1.7.0-openjdk
+
+
+## Jettyn asennus (Jetty 9)
+- http://kukunotes.wordpress.com/2013/01/21/eclipse-jetty-9-0-installation-on-centos-6-3/
+wget --output-document=jetty-distribution-9.2.3.v20140905.tar.gz http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.3.v20140905.tar.gz
+wget --output-document=jetty-distribution-9.2.3.v20140905.tar.gz.sha1 http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.3.v20140905.tar.gz.sha1
+# ? sha1sum -c jetty-distribution-9.2.3.v20140905.tar.gz
+
+sudo mkdir /opt/jetty
+
+sudo tar xzf jetty-distribution-9.2.3.v20140905.tar.gz -C /opt/jetty
+sudo ln -s /opt/jetty/jetty-distribution-9.2.3.v20140905 /opt/jetty9
+
+sudo useradd jetty
+sudo chown -R jetty:jetty /opt/jetty9
+sudo cp /opt/jetty9/bin/jetty.sh /etc/init.d/jetty
+
+sudo chkconfig --add jetty
+sudo chkconfig jetty on
+
+sudo mkdir /var/log/jetty
+sudo chown jetty:jetty /var/log/jetty
+sudo printf 'JETTY_HOME=/opt/jetty9\nJETTY_USER=jetty\nJETTY_PORT=8210\nJETTY_LOGS=/var/log/jetty' > /etc/default/jetty
+
+
+# DB startup
+sudo service postgresql-9.3 start
+
+
+# APP DB content
+
+## SQL kannan luonti
+- http://www.postgresql.org/docs/9.3/static/app-psql.html
+- http://en.wikipedia.org/wiki/Here_document
+
+sudo -u postgres psql <<EOF
+CREATE DATABASE geonetwork_2_10 WITH OWNER = postgres ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
+\c geonetwork_2_10
+CREATE EXTENSION POSTGIS;
+EOF
+
+sudo -u postgres psql -d geonetwork_2_10 <<EOF
+CREATE ROLE jetty LOGIN;
+CREATE ROLE geonetwork LOGIN;
+CREATE ROLE web LOGIN;
+EOF
+
+sudo -u postgres psql -d geonetwork_2_10 <<EOF
+grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO geonetwork;
+grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO jetty;
+EOF
+
+## APP SQL kannan migraatio 2.6.5 -> 2.10
+
+## APP NGINX
+- http://nginx.com/resources/admin-guide/reverse-proxy/
+# /etc/nginx/conf.d/geocat.conf 
+# - proxyt
+# - html files
+
+
+## APP Jetty Geonetwork asennus ja konffaus template konffalla
+
+# WAR
+# CONFFA file override?
+wget --output-document=geonetwork-210-atomfeed.zip http://geonetwork.nls.fi/dist/geonetwork/geonetwork-210-atomfeed.zip
+
+sudo mkdir /opt/jetty9/webapps/geonetwork
+sudo unzip geonetwork-210-atomfeed.zip -d /opt/jetty9/webapps/geonetwork
+
+conffat
+JDBC driver
+
+
+# SERVICE startup
+sudo service jetty start
+sudo service nginx start
