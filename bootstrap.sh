@@ -69,6 +69,16 @@ sudo mkdir /var/log/jetty
 sudo chown jetty:jetty /var/log/jetty
 sudo printf 'JETTY_HOME=/opt/jetty9\nJETTY_USER=jetty\nJETTY_LOGS=/var/log/jetty' > /etc/default/jetty
 
+
+# jdbc libs to be shared from Jetty lib/ext
+wget -q --output-document=postgresql-9.3-1102.jdbc3.jar http://jdbc.postgresql.org/download/postgresql-9.3-1102.jdbc3.jar
+wget -q --output-document=postgresql-9.3-1102.jdbc4.jar  http://jdbc.postgresql.org/download/postgresql-9.3-1102.jdbc4.jar
+#sudo mv postgresql-9.3-1102.jdbc3.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib/
+#sudo mv postgresql-9.3-1102.jdbc4.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib/
+sudo mv postgresql-9.3-1102.jdbc3.jar /opt/jetty9/lib/ext/
+sudo mv postgresql-9.3-1102.jdbc4.jar /opt/jetty9/lib/ext/
+
+
 # DB 
 sudo service postgresql-9.3 start
 
@@ -123,11 +133,6 @@ sudo cp /vagrant/resources/geonetwork-config.xml /opt/jetty9/webapps/geonetwork/
 sudo cp /vagrant/resources/icu4j_2_8.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib/
 sudo rm  /opt/jetty9/webapps/geonetwork/WEB-INF/lib/icu4j-2.6.1.jar 
 
-# jdbc
-wget -q --output-document=postgresql-9.3-1102.jdbc3.jar http://jdbc.postgresql.org/download/postgresql-9.3-1102.jdbc3.jar
-wget -q --output-document=postgresql-9.3-1102.jdbc4.jar  http://jdbc.postgresql.org/download/postgresql-9.3-1102.jdbc4.jar
-sudo mv postgresql-9.3-1102.jdbc3.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib/
-sudo mv postgresql-9.3-1102.jdbc4.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib/
 
 
 
@@ -136,15 +141,44 @@ sudo mv postgresql-9.3-1102.jdbc4.jar /opt/jetty9/webapps/geonetwork/WEB-INF/lib
 sudo chown -R jetty:jetty /opt/jetty9/webapps/geonetwork
 
 
-
-
-# APP NGINX CONF AND FILES
-# - HTML files
-# - proxy settings
-sudo tar xzfC /vagrant/resources/catalogue-html.tgz /usr/share/nginx/html
+# NGINX Setup
 sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.backup
 sudo cp /vagrant/resources/geocat-nginx.conf /etc/nginx/conf.d/geocat.conf
 
+
+# Catalogue WEBAPP and related
+# - HTML files
+wget -q --output-document=catalogue-html.tgz http://www.paikkatietohakemisto.fi/dist/catalogue-html.tgz
+sudo tar xzfC catalogue-html.tgz /usr/share/nginx/html
+sudo chown -R nginx:root /usr/share/nginx/html/catalogue
+
+# WARs
+wget -q --output-document=webservices.tgz http://geonetwork.nls.fi/dist/webservices.tgz
+sudo mkdir /tmp/_ws
+sudo tar xzfC webservices.tgz /tmp/_ws
+
+# - schema catalogue
+sudo cp /tmp/_ws/webservices/webapps/portti-schema-service.war /opt/jetty9/webapps/
+sudo chown jetty:jetty /opt/jetty9/webapps/portti-schema-service.war
+
+# - validator jump station
+sudo cp /tmp/_ws/webservices/webapps/validator-geoportal-fi-0.0.1-SNAPSHOT.war /opt/jetty9/webapps/
+sudo chown jetty:jetty /opt/jetty9/webapps/validator-geoportal-fi-0.0.1-SNAPSHOT.war
+
+
+# - metadata printout
+sudo mkdir jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
+sudo unzip -q /tmp/_ws/webservices/webapps/portti-metadata-printout.war -d /opt/jetty9/webapps/portti-metadata-printout
+sudo cp /vagrant/resources/portti-metadata-printout-web.xml /opt/jetty9/webapps/portti-metadata-printout/WEB-INF/web.xml
+sudo chown -R jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
+
+# - Catalogue WEBAPP DB
+wget -q --output-document=catalogue_20140917.sql http://geonetwork.nls.fi/dist/catalogue_20140917.sql
+sudo -u postgres psql -d postgres <<EOF
+CREATE DATABASE catalogue WITH OWNER = web ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
+EOF
+
+sudo -u postgres psql -d catalogue -f catalogue_20140917.sql
 
 # SERVICE startup
 #sudo service jetty start
