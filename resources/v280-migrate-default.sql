@@ -4,6 +4,94 @@ ALTER TABLE IsoLanguages ADD COLUMN shortcode VARCHAR(2);
 
 -- ======================================================================
 
+-- =====
+CREATE TABLE HarvestHistory
+(
+    id             int           not null,
+    harvestDate    varchar(30),
+    elapsedTime    int,
+    harvesterUuid  varchar(250),
+    harvesterName  varchar(128),
+    harvesterType  varchar(128),
+    deleted        char(1)       default 'n' not null,
+    info           text,
+    params         text,
+
+    primary key(id)
+
+);
+
+CREATE INDEX HarvestHistoryNDX1 ON HarvestHistory(harvestDate);
+
+CREATE TABLE StatusValues
+(
+    id        int not null,
+    name      varchar(32)   not null,
+    reserved  char(1)       default 'n' not null,
+    primary key(id)
+);
+
+
+CREATE TABLE StatusValuesDes
+(
+    idDes   int not null,
+    langId  varchar(5) not null,
+    label   varchar(96)   not null,
+    primary key(idDes,langId)
+);
+
+
+CREATE TABLE MetadataStatus
+(
+    metadataId  int not null,
+    statusId    int default 0 not null,
+    userId      int not null,
+    changeDate   varchar(30)    not null,
+    changeMessage   varchar(2048) not null,
+    primary key(metadataId,statusId,userId,changeDate),
+    foreign key(metadataId) references Metadata(id),
+    foreign key(statusId)   references StatusValues(id),
+    foreign key(userId)     references Users(id)
+);
+CREATE INDEX MetadataNDX3 ON Metadata(owner);
+
+CREATE TABLE Validation
+(
+    metadataId   int,
+    valType      varchar(40),
+    status       int,
+    tested       int,
+    failed       int,
+    valDate      varchar(30),
+
+    primary key(metadataId, valType),
+    foreign key(metadataId) references Metadata(id)
+);
+
+CREATE TABLE Thesaurus (
+    id   varchar(250) not null,
+    activated    varchar(1),
+    primary key(id)
+);
+
+ALTER TABLE Users ALTER COLUMN username TYPE varchar(256);
+
+ALTER TABLE Metadata ALTER COLUMN createDate TYPE varchar(30);
+ALTER TABLE Metadata ALTER COLUMN changeDate TYPE varchar(30);
+ALTER TABLE Metadata ADD doctype varchar(255);
+
+DROP TABLE IndexLanguages;
+
+ALTER TABLE Languages DROP COLUMN isocode;
+
+ALTER TABLE IsoLanguages ADD shortcode varchar(2);
+
+ALTER TABLE Categories ALTER COLUMN  name TYPE varchar(255);
+ALTER TABLE CategoriesDes ALTER COLUMN label TYPE varchar(255);
+ALTER TABLE Settings ALTER COLUMN name TYPE varchar(64);
+
+-- =====
+
 
 -- INSERT INTO Settings VALUES (910,1,'metadata',NULL);
 -- INSERT INTO Settings VALUES (911,910,'enableSimpleView','true');
@@ -13,10 +101,10 @@ ALTER TABLE IsoLanguages ADD COLUMN shortcode VARCHAR(2);
 -- INSERT INTO Settings VALUES (915,910,'defaultView','simple');
 
 INSERT INTO Settings VALUES (1917,1,'metadataprivs',NULL);
-INSERT INTO Settings VALUES (918,1917,'usergrouponly','false');
+INSERT INTO Settings VALUES (1918,1917,'usergrouponly','false');
 
 INSERT INTO Settings VALUES (1920,1,'threadedindexing',NULL);
-INSERT INTO Settings VALUES (921,1920,'maxthreads','1');
+INSERT INTO Settings VALUES (1921,1920,'maxthreads','1');
 INSERT INTO Settings VALUES (17,10,'svnUuid','');
 
 -- add extra placeholders for shibboleth attributes
@@ -30,10 +118,10 @@ INSERT INTO Settings VALUES (184,173,'fullName',NULL);
 -- add requestedlanguage and autodetect settings
 
 INSERT INTO Settings VALUES (1950,1,'autodetect',NULL);
-INSERT INTO Settings VALUES (951,1950,'enable','true');
+INSERT INTO Settings VALUES (1951,1950,'enable','true');
 INSERT INTO Settings VALUES (1952,1,'requestedLanguage',NULL);
-INSERT INTO Settings VALUES (953,1952,'only','prefer_locale');
-INSERT INTO Settings VALUES (954,1952,'sorted','true');
+INSERT INTO Settings VALUES (1953,1952,'only','prefer_locale');
+INSERT INTO Settings VALUES (1954,1952,'sorted','true');
 
 -- add enable statistics
 INSERT INTO Settings VALUES (1250,1,'searchStats',NULL);

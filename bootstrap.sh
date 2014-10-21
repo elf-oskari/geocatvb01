@@ -1,5 +1,23 @@
+# #############################################
+# geocatvb01 geonetwork service setup bootstrap
+# #############################################
+# CHANGES
+#
+# 2014-10-21 targets
+# - (/) fix PostGIS installation issues
+# - (/) upgrade to geonetwork 2.10.3 atomfeed version
+# - (x) fix migration scripts from 2.6.5 to 2.8.0 to 2.10.3 OR 
+# - (x) ? modify data to enable Geonetwork migrations to work?
+# - (x) setup for schema catalogue  WAR and db
+# - (x) setup for metadata printout WAR and db
+# 
+# 2014-09-18
+# - initial bootstrap for geonetwork geo catalogue
+#
+
 # TOOLS
 sudo yum -y install unzip
+
 
 # PostgreSQL 
 sudo sed '/\[.*\]/ a\
@@ -7,9 +25,12 @@ exclude=postgresql*' /etc/yum.repos.d/CentOS-Base.repo > TEMP-CentOS-Base.repo
 sudo cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 sudo cp TEMP-CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo
 
+sudo yum -y localinstall http://www.nic.funet.fi/pub/mirrors/fedora.redhat.com/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 sudo yum -y localinstall http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-centos93-9.3-1.noarch.rpm
 sudo yum -y list postgres*
-sudo yum -y install postgresql93-server
+
+sudo yum -y install gdal geos libxml2 json-c
+sudo yum -y install postgresql93-server postgresql-contrib
 sudo yum -y install postgis2_93
 
 
@@ -25,7 +46,7 @@ sudo chkconfig postgresql-9.3 on
 #sudo service postgresql-9.3 start
 
 # Nginx
-sudo su -c 'rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm'
+#sudo su -c 'rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm'
 sudo yum -y install nginx
 
 # JDK
@@ -38,6 +59,7 @@ wget -q --output-document=jetty-distribution-9.2.3.v20140905.tar.gz.sha1 http://
 sudo mkdir /opt/jetty
 sudo tar xzf jetty-distribution-9.2.3.v20140905.tar.gz -C /opt/jetty
 sudo ln -s /opt/jetty/jetty-distribution-9.2.3.v20140905 /opt/jetty9
+sudo mkdir /opt/jetty9/work
 sudo useradd jetty
 sudo chown -R jetty:jetty /opt/jetty/jetty-distribution-9.2.3.v20140905
 sudo cp /opt/jetty9/bin/jetty.sh /etc/init.d/jetty
@@ -49,6 +71,8 @@ sudo printf 'JETTY_HOME=/opt/jetty9\nJETTY_USER=jetty\nJETTY_LOGS=/var/log/jetty
 
 # DB 
 sudo service postgresql-9.3 start
+
+cd /tmp/
 
 # APP create DB
 sudo -u postgres psql -d postgres <<EOF
@@ -67,19 +91,27 @@ EOF
 # APP create DB geonetwork_2_10 content
 sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/geonetwork265inspire_20140917.sql
 
-sudo -u postgres psql -d geonetwork_2_10 <<EOF
-grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO geonetwork;
-grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO jetty;
-EOF
 
 ## APP SQL migrate 2.6.5 -> 2.10
 sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/v280-migrate-default.sql
 sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/v2100-migrate-default.sql
 
+# GRANTS
+sudo -u postgres psql -d geonetwork_2_10 <<EOF
+grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO geonetwork;
+grant SELECT,INSERT,UPDATE,DELETE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA PUBLIC TO jetty;
+EOF
 
+
+## Vagrant test setup
+sudo -u postgres psql -d geonetwork_2_10 <<EOF
+update Settings set value = 'localhost' where name = 'host' and id = 21;
+update Settings set value = '8080' where name = 'port' and id = 22;
+EOF
 
 # APP GEONETWORK WAR
-wget -q --output-document=geonetwork-210-atomfeed.zip http://geonetwork.nls.fi/dist/geonetwork/geonetwork-210-atomfeed.zip
+#wget -q --output-document=geonetwork-210-atomfeed.zip http://geonetwork.nls.fi/dist/geonetwork/geonetwork-210-atomfeed.zip
+wget -q --output-document=geonetwork-210-atomfeed.zip http://thor.geocat.net/downloads/geonetwork-2103-atomfeed.war
 # APP GEONETWORK CONF
 # - overrides or extracted WAR?
 sudo mkdir /opt/jetty9/webapps/geonetwork
@@ -109,7 +141,7 @@ sudo chown -R jetty:jetty /opt/jetty9/webapps/geonetwork
 # APP NGINX CONF AND FILES
 # - HTML files
 # - proxy settings
-sudo tar /vagrant/resources/catalogue-html.tgz  -C /usr/share/nginx/html
+sudo tar xzfC /vagrant/resources/catalogue-html.tgz /usr/share/nginx/html
 sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.backup
 sudo cp /vagrant/resources/geocat-nginx.conf /etc/nginx/conf.d/geocat.conf
 
