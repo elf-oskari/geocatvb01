@@ -17,7 +17,7 @@
     <init-param>
       <description>metadataservice url</description>
       <param-name>metadataserviceurl</param-name>
-      <param-value>http://127.0.0.1:8080/geonetwork/srv/eng/csw</param-value>
+      <param-value>http://127.0.0.1:80/geonetwork</param-value>
     </init-param>
     <init-param>
       <description>logo url</description>
@@ -38,7 +38,7 @@
     <init-param>
       <description>metadataservice url</description>
       <param-name>metadataserviceurl</param-name>
-      <param-value>http://127.0.0.1:8080/geonetwork/srv/eng/csw</param-value>
+      <param-value>http://127.0.0.1:80/geonetwork</param-value>
     </init-param>
     <init-param>
       <description>logo url</description>
@@ -48,7 +48,7 @@
      <init-param>
       <description>cachedir</description>
       <param-name>cachedir</param-name>
-      <param-value>.</param-value>
+      <param-value>/tmp</param-value>
     </init-param>
   </servlet>
   <servlet>
@@ -59,7 +59,7 @@
     <init-param>
       <description>metadataservice url</description>
       <param-name>metadataserviceurl</param-name>
-      <param-value>http://127.0.0.1:8080/geonetwork/srv/eng/csw</param-value>
+      <param-value>http://127.0.0.1:80/geonetwork/srv/en/csw</param-value>
     </init-param>
     
   </servlet>
