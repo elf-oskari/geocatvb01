@@ -3,13 +3,19 @@
 # #############################################
 # CHANGES
 #
-# 2014-10-28 self documenting - added comments to this
+# 2014-10-28 
+# - (/) 'self documenting' - added comments to this
+# - (/) new approach to migrating
+#    1) import dump
+#    2) migrate
+#    3) restore default settings from 2103 dump
+#    4) migrate settings
+#
 # 2014-10-21 targets
 # - (/) fix PostGIS installation issues (ok)
 # - (x) try to get PostGIS spatial index to work
 # - (/) upgrade to geonetwork 2.10.3 atomfeed version (ok)
 # - (/) fix migration scripts from 2.6.5 to 2.8.0 to 2.10.3 OR  (some missing db tables for 2.10.3 inspireatomfeed found from H2 db with DESCRIBE )
-# - (-) ? modify data to enable Geonetwork migrations to work?
 # - (/) setup for schema catalogue  WAR and db (ok)
 # - (-) setup for metadata printout WAR and db (only partial success printout (deegree 2.x) sends CSW request without service="CSW" attribute -fails)
 # 
@@ -137,6 +143,7 @@ sudo -u postgres psql -d geonetwork_2_10 -f $GEONETWORK_DB_DUMP
 printf "6.4) Database content - Geonetwork migrations\n"
 sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/v280-migrate-default.sql
 sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/v2100-migrate-default.sql
+sudo -u postgres psql -d geonetwork_2_10 -f /vagrant/resources/2103-settings-post-migrate.sql
 
 # 6.5) GRANTS for geonetwork db
 sudo -u postgres psql -d geonetwork_2_10 <<EOF
@@ -201,12 +208,13 @@ sudo cp /tmp/_ws/webservices/webapps/validator-geoportal-fi-0.0.1-SNAPSHOT.war /
 sudo chown jetty:jetty /opt/jetty9/webapps/validator-geoportal-fi-0.0.1-SNAPSHOT.war
 
 
-# 11) metadata printout - about to get boot
-printf "11) WebApp - Metadata Printout\n"
-sudo mkdir jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
-sudo unzip -q /tmp/_ws/webservices/webapps/portti-metadata-printout.war -d /opt/jetty9/webapps/portti-metadata-printout
-sudo cp /vagrant/resources/portti-metadata-printout-web.xml /opt/jetty9/webapps/portti-metadata-printout/WEB-INF/web.xml
-sudo chown -R jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
+# 11) metadata printout
+# - let's not - missing multi language support etc. geonetwork has some support for printing metadata
+#printf "11) WebApp - Metadata Printout\n"
+#sudo mkdir jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
+#sudo unzip -q /tmp/_ws/webservices/webapps/portti-metadata-printout.war -d /opt/jetty9/webapps/portti-metadata-printout
+#sudo cp /vagrant/resources/portti-metadata-printout-web.xml /opt/jetty9/webapps/portti-metadata-printout/WEB-INF/web.xml
+#sudo chown -R jetty:jetty /opt/jetty9/webapps/portti-metadata-printout
 
 
 # 12) App NGINX Setup
@@ -222,7 +230,8 @@ update Settings set value = 'localhost' where name = 'host' and id = 21;
 update Settings set value = '8080' where name = 'port' and id = 22;
 EOF
 
-printf "14) Done.\n -> sudo service jetty start\n-> sudo service nginx start"
+printf "14) Done.\n"
+printf "15) Start services with\n-> vagrant ssh\n---> sudo service jetty start\n---> sudo service nginx start\n\n"
 # 14) SERVICE startup
 #sudo service jetty start
 #sudo service nginx start
