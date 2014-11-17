@@ -229,7 +229,7 @@ sudo cp /vagrant/resources/geocat-nginx.conf /etc/nginx/conf.d/geocat.conf
 printf "13) Vagrant test settings to Geonetwork\n"
 sudo -u postgres psql -d geonetwork_2_10 <<EOF
 update Settings set value = 'localhost' where name = 'host' and id = 21;
-update Settings set value = '8080' where name = 'port' and id = 22;
+update Settings set value = '9090' where name = 'port' and id = 22;
 EOF
 
 printf "14) Done.\n"
