@@ -5,6 +5,14 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Use proxy if configured
+  if (Vagrant.has_plugin?("vagrant-proxyconf"))
+    config.proxy.http = "http://wwwp.nls.fi:800/"
+    config.proxy.https = "http://wwwp.nls.fi:800/"
+    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+  end
+
   # All Vagrant configuration is done here. The most common configuration
   # options are documented and commented below. For a complete reference,
   # please see the online documentation at vagrantup.com.

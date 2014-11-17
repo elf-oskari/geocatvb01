@@ -26,6 +26,8 @@
 # 0) setup and versions
 set -e -u
 
+JETTY_RELEASE=stable-9
+JETTY_VERSION=9.2.3.v20140905
 GEONETWORK_WAR_URL=http://thor.geocat.net/downloads/geonetwork-2103-atomfeed.war
 GEONETWORK_DB_DUMP=/vagrant/resources/geonetwork265inspire_20140917.sql
 
@@ -80,15 +82,15 @@ sudo yum -y install nginx
 
 # 4.2) Jetty
 printf "4) Application services - Jetty\n"
-wget -q --output-document=jetty-distribution-9.2.3.v20140905.tar.gz http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.3.v20140905.tar.gz
-wget -q --output-document=jetty-distribution-9.2.3.v20140905.tar.gz.sha1 http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.3.v20140905.tar.gz.sha1
+wget -q --output-document=jetty-distribution-$JETTY_VERSION.tar.gz http://download.eclipse.org/jetty/$JETTY_RELEASE/dist/jetty-distribution-$JETTY_VERSION.tar.gz
+wget -q --output-document=jetty-distribution-$JETTY_VERSION.tar.gz.sha1 http://download.eclipse.org/jetty/$JETTY_RELEASE/dist/jetty-distribution-$JETTY_VERSION.tar.gz.sha1
 
 sudo mkdir /opt/jetty
-sudo tar xzf jetty-distribution-9.2.3.v20140905.tar.gz -C /opt/jetty
-sudo ln -s /opt/jetty/jetty-distribution-9.2.3.v20140905 /opt/jetty9
+sudo tar xzf jetty-distribution-$JETTY_VERSION.tar.gz -C /opt/jetty
+sudo ln -s /opt/jetty/jetty-distribution-$JETTY_VERSION /opt/jetty9
 sudo mkdir /opt/jetty9/work
 sudo useradd jetty
-sudo chown -R jetty:jetty /opt/jetty/jetty-distribution-9.2.3.v20140905
+sudo chown -R jetty:jetty /opt/jetty/jetty-distribution-$JETTY_VERSION
 sudo cp /opt/jetty9/bin/jetty.sh /etc/init.d/jetty
 sudo chkconfig --add jetty
 sudo chkconfig jetty on
