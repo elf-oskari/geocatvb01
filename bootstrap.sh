@@ -27,7 +27,7 @@
 set -e -u
 
 JETTY_RELEASE=stable-9
-JETTY_VERSION=9.2.3.v20140905
+JETTY_VERSION=9.2.5.v20141112
 GEONETWORK_WAR_URL=http://thor.geocat.net/downloads/geonetwork-2103-atomfeed.war
 GEONETWORK_DB_DUMP=/vagrant/resources/geonetwork265inspire_20140917.sql
 
