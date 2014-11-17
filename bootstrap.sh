@@ -235,7 +235,7 @@ EOF
 printf "14) Done.\n"
 printf "15) Start services with\n-> vagrant ssh\n---> sudo service jetty start\n---> sudo service nginx start\n\n"
 # 14) SERVICE startup
-#sudo service jetty start
-#sudo service nginx start
+sudo service jetty start
+sudo service nginx start
 
 
