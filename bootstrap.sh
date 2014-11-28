@@ -96,7 +96,8 @@ sudo chkconfig --add jetty
 sudo chkconfig jetty on
 sudo mkdir /var/log/jetty
 sudo chown jetty:jetty /var/log/jetty
-sudo printf 'JETTY_HOME=/opt/jetty9\nJETTY_USER=jetty\nJETTY_LOGS=/var/log/jetty' > /etc/default/jetty
+sudo printf 'JETTY_HOME=/opt/jetty9\nJETTY_USER=jetty\nJETTY_LOGS=/var/log/jetty' > jetty.txt
+sudo cp jetty.txt > /etc/default/jetty
 
 # 4.3) PostgreSQL support for Jetty
 # jdbc libs to be shared from Jetty lib/ext
